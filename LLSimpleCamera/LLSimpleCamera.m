@@ -450,22 +450,36 @@ NSString *const LLSimpleCameraErrorDomain = @"LLSimpleCameraErrorDomain";
 
 #pragma mark Focus
 
-- (void) focusAtPoint:(CGPoint)point
+- (void)focusAtPoint:(CGPoint)point
 {
     //NSLog(@"Focusing at point %@", NSStringFromCGPoint(point));
     
     AVCaptureDevice *device = _deviceInput.device;
-    if (device.isFocusPointOfInterestSupported && [device isFocusModeSupported:AVCaptureFocusModeAutoFocus]) {
-        NSError *error;
-        if ([device lockForConfiguration:&error]) {
+    NSError *error;
+    
+    if ([device lockForConfiguration:&error]) {
+        
+        if (device.focusPointOfInterestSupported) {
             device.focusPointOfInterest = point;
-            device.focusMode = AVCaptureFocusModeAutoFocus;
-            [device unlockForConfiguration];
         }
         
-        if(error && self.onError) {
-            self.onError(self, error);
+        if (device.exposurePointOfInterestSupported) {
+            device.exposurePointOfInterest = point;
         }
+        
+        if ([device isFocusModeSupported:AVCaptureFocusModeAutoFocus]) {
+            device.focusMode = AVCaptureFocusModeAutoFocus;
+        }
+        
+        if ([device isExposureModeSupported:AVCaptureExposureModeContinuousAutoExposure]) {
+            device.exposureMode = AVCaptureExposureModeContinuousAutoExposure;
+        }
+        
+        [device unlockForConfiguration];
+    }
+    
+    if (error && self.onError) {
+        self.onError(self, error);
     }
 }
 
